@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 // ------------------- EDITABLE CONTENT -------------------
 const NAMES = { a: "Samu", b: "Fer" };
@@ -316,8 +317,10 @@ function SorpresaTeaser() {
   return (
     <section className="relative w-full min-h-[85dvh] overflow-hidden">
       <img
-        src="/photos/4.jpg"
+        src="/photos/history/m07.jpg"
         alt=""
+        loading="lazy"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
         onError={(e) => {
           (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -358,6 +361,7 @@ function HeroCouple() {
       <img
         src="/photos/hero.jpg"
         alt="Nosotros"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div
@@ -496,17 +500,19 @@ function MomentsCarousel() {
                     {m.kind === "video" ? (
                       <video
                         src={m.src}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover bg-black"
                         muted
                         loop
                         playsInline
-                        autoPlay
-                        preload="metadata"
+                        controls
+                        preload="none"
                       />
                     ) : (
                       <img
                         src={m.src}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const el = e.currentTarget as HTMLImageElement;
@@ -591,42 +597,66 @@ function MomentsCarousel() {
       </p>
 
       {expanded !== null && (
-        <div
-          onClick={() => setExpanded(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-5 fade-in"
-          style={{
-            background: "rgba(10,5,10,.65)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-[26px] bg-[color:var(--cream)] shadow-2xl p-8"
-          >
-            <button
-              onClick={() => setExpanded(null)}
-              aria-label="Cerrar"
-              className="absolute top-3 right-4 text-neutral-500 text-2xl leading-none"
-            >
-              ×
-            </button>
-            <p
-              className="italic text-rose-600/90 text-lg"
-              style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}
-            >
-              Nº {String(expanded + 1).padStart(2, "0")}
-            </p>
-            <p
-              className="mt-4 text-neutral-800 italic leading-7 text-[15px]"
-              style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}
-            >
-              {MOMENTS[expanded].caption}
-            </p>
-          </div>
-        </div>
+        <MomentModal
+          idx={expanded}
+          onClose={() => setExpanded(null)}
+        />
       )}
     </section>
+  );
+}
+
+function MomentModal({ idx, onClose }: { idx: number; onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+  if (!mounted) return null;
+  return createPortal(
+    <div
+      className="fixed inset-0 flex items-center justify-center p-5 fade-in"
+      style={{ zIndex: 9999 }}
+    >
+      <div
+        onClick={onClose}
+        className="absolute inset-0"
+        style={{
+          background: "rgba(10,5,10,.7)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+      />
+      <div
+        className="relative w-full max-w-md rounded-[26px] shadow-2xl p-8 max-h-[85dvh] overflow-y-auto"
+        style={{ background: "#fffafa" }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="absolute top-3 right-4 text-neutral-500 text-2xl leading-none"
+        >
+          ×
+        </button>
+        <p
+          className="italic text-rose-600/90 text-lg"
+          style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}
+        >
+          Nº {String(idx + 1).padStart(2, "0")}
+        </p>
+        <p
+          className="mt-4 text-neutral-900 italic leading-7 text-[15px]"
+          style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}
+        >
+          {MOMENTS[idx].caption}
+        </p>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -720,6 +750,8 @@ function Timeline() {
                 <img
                   src={t.img}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display = "none";
